@@ -1,0 +1,43 @@
+﻿services:
+  db:
+    image: postgres:15
+    container_name: ia_db
+    environment:
+      POSTGRES_DB: intern_assistant
+      POSTGRES_USER: ia_user
+      POSTGRES_PASSWORD: ia_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./api
+    image: ia_api_image
+    container_name: ia_api
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+psycopg2://ia_user:ia_pass@db:5432/intern_assistant
+      JWT_SECRET: supersecret_change_me
+      HMAC_SECRET: supersecret_change_me_too
+      ADMIN_USER: admin
+      ADMIN_PASS: admin123
+    ports:
+      - "8000:8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: ia_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  db_data:
